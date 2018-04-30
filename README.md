@@ -36,7 +36,7 @@ ipython profile_numexpr.ipy
 
 
 ## Memory Profiling Examples
-To generate a graphical comparison of memory usage for the numexpr and numba based Lapalce Kernels, run:
+To generate a graphical comparison of memory usage for the numexpr and numba based Laplace Kernels, run:
 ```bash
 mprof run --interval 0.01 test_memory.py
 mprof plot
@@ -49,7 +49,7 @@ To install:
 cd points
 pip install .
 ```
-You can test that the package worked correctly by running:
+Run basic unit tests with:
 ```bash
 pytest
 ```
