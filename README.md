@@ -22,6 +22,7 @@ If you've done everything correctly, and have activated your virtual environment
 ```bash
 f2py -m fortran_kernel -c kernel.f90
 ```
+Now run:
 ```bash
 ipython laplace_kernel.ipy
 ```
