@@ -1,0 +1,27 @@
+import numpy as np
+import numexpr as ne
+import line_profiler
+%load_ext line_profiler
+
+N = 10000
+x = np.random.rand(N)
+y = np.random.rand(N)
+z = np.random.rand(N)
+tau = np.random.rand(N)
+
+### Numexpr based version
+D = np.empty([N,N], dtype=float)
+out = np.empty(N, dtype=float)
+scale = 1.0/(4*np.pi)
+
+def kernel_evaluation(x, y, z, tau, D, out, scale):
+    xT = x[:,None]
+    yT = y[:,None]
+    zT = z[:,None]
+    ne.evaluate('1.0/sqrt((x-xT)**2 + (y-yT)**2 + (z-zT)**2)', out=D)
+    np.fill_diagonal(D, 0.0)
+    np.dot(D, tau, out=out)
+    np.multiply(out, scale, out)
+    return out
+
+%lprun -f kernel_evaluation kernel_evaluation(x, y, z, tau, D, out, scale)

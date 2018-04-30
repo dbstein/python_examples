@@ -1,0 +1,65 @@
+import numpy as np
+import numexpr as ne
+from numba import njit, prange
+from fortran_kernel import fortran_kernel
+
+N = 10000
+x = np.random.rand(N)
+y = np.random.rand(N)
+z = np.random.rand(N)
+tau = np.random.rand(N)
+
+### Numpy based version
+def kernel_evaluation(x, y, z, tau):
+    dx = x - x[:,None]
+    dy = y - y[:,None]
+    dz = z - z[:,None]
+    d = np.sqrt(dx**2 + dy**2 + dz**2)
+    d[d == 0] = np.Inf
+    r = tau/d/(4.0*np.pi)
+    return np.sum(r, axis=1)
+
+print('\nTesting numpy version:')
+r2 = kernel_evaluation(x, y, z, tau)
+%timeit kernel_evaluation(x, y, z, tau)
+
+### Numexpr based version
+D = np.empty([N,N], dtype=float)
+out = np.empty(N, dtype=float)
+scale = 1.0/(4*np.pi)
+
+def kernel_evaluation(x, y, z, tau, D, out, scale):
+    xT = x[:,None]
+    yT = y[:,None]
+    zT = z[:,None]
+    ne.evaluate('1.0/sqrt((x-xT)**2 + (y-yT)**2 + (z-zT)**2)', out=D)
+    np.fill_diagonal(D, 0.0)
+    np.dot(D, tau, out=out)
+    np.multiply(out, scale, out)
+    return out
+
+print('\nTesting numexpr version:')
+r3 = kernel_evaluation(x, y, z, tau, D, out, scale)
+%timeit kernel_evaluation(x, y, z, tau, D, out, scale)
+
+### Fotran version
+print('\nTesting fortran version:')
+r4 = fortran_kernel(x, y, z, tau)
+%timeit fortran_kernel(x, y, z, tau)
+
+### Numba version
+@njit(parallel=True)
+def kernel_evaluation(x, y, z, tau, out, N):
+    scale = 1.0/(4.0*np.pi)
+    for i in prange(N):
+        for j in range(i):
+            out[i] += tau[j]*np.sqrt((x[i]-x[j])**2 + (y[i]-y[j])**2 + (z[i]-z[j])**2)
+        for j in range(i+1,N):
+            out[i] += tau[j]/np.sqrt((x[i]-x[j])**2 + (y[i]-y[j])**2 + (z[i]-z[j])**2)
+    for i in range(N):
+        out[i] *= scale
+
+print('\nTesting numba version:')
+out = np.zeros(N, dtype=float)
+kernel_evaluation(x, y, z, tau, out, N)
+%timeit kernel_evaluation(x, y, z, tau, out, N)

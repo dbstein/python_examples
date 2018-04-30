@@ -1,0 +1,32 @@
+import numpy as np
+import points
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+plt.ion()
+
+n = 200
+
+# get a grid
+v = np.linspace(-1, 1, n)
+x, y = np.meshgrid(v, v, indexing='ij')
+
+# get a boundary
+theta = np.linspace(0, 2*np.pi, n, endpoint=False)
+bx = 0.5*np.cos(theta)
+by = 0.5*np.sin(theta)
+
+pg = points.points(x, y)
+pb = points.points(bx, by)
+
+close_pg1 = pb.near_points_slow(pg, 0.02)
+print('Direct method:')
+%timeit close_pg1 = pb.near_points_slow(pg, 0.02)
+
+plt.pcolor(x, y, close_pg1)
+plt.plot(pb.x, pb.y, color='white')
+
+pg.compute_tree()
+close_pg2 = pb.near_points(pg, 0.02)
+print('Tree based method:')
+%timeit close_pg2 = pb.near_points(pg, 0.02)
+
